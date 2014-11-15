@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -28,7 +29,11 @@ func init() {
  */
 func main() {
 	http.HandleFunc("/", ElSimulatorHandle)
-	http.ListenAndServe(elSimulatorConfig.bindingAddress, nil)
+	log.Println("start on %s", elSimulatorConfig.bindingAddress)
+	err := http.ListenAndServe(elSimulatorConfig.bindingAddress, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 /**
