@@ -6,12 +6,18 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/user"
+	"path/filepath"
 )
 
 //Configuration Application
 type ElSimulatorConfig struct {
 	//url to call
 	bindingAddress string
+	//directory with file to read
+	baseDirectory string
+	//context web
+	context string
 }
 
 //configuration to use
@@ -19,14 +25,40 @@ var elSimulatorConfig = new(ElSimulatorConfig)
 
 //parse command in configuration
 func init() {
-	flag.StringVar(&elSimulatorConfig.bindingAddress, "bindingAddress", "localhost:4000", "The binding address")
+	const (
+		defaultBindingAddress = "localhost:4000"
+		defaultContext        = "/elSimulator/"
+		defaultBaseDirectory  = "" //elSimulatorCurrent if default is current directory
+	)
+	flag.StringVar(&elSimulatorConfig.bindingAddress, "bindingAddress", defaultBindingAddress, "The binding address")
+	flag.StringVar(&elSimulatorConfig.context, "context", defaultContext, "The context")
+	flag.StringVar(&elSimulatorConfig.baseDirectory, "baseDirectory", defaultBaseDirectory, "directory with file to read (elSimulatorCurrent to use directory elSimulator)")
 	flag.Parse()
+	//use home'user
+	switch elSimulatorConfig.baseDirectory {
+	case "":
+		usr, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+		elSimulatorConfig.baseDirectory = usr.HomeDir
+		break
+
+	case "elSimulatorCurrent":
+		dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			log.Fatal(err)
+		}
+		elSimulatorConfig.baseDirectory = dir
+		break
+	}
+	log.Println("configuration :", elSimulatorConfig)
 }
 
 //Bind address.
 func main() {
-	http.HandleFunc("/", ElSimulatorHandle)
-	log.Println("start on %s", elSimulatorConfig.bindingAddress)
+	http.HandleFunc(elSimulatorConfig.context, ElSimulatorHandle)
+	log.Println("start on ", elSimulatorConfig.bindingAddress)
 	err := http.ListenAndServe(elSimulatorConfig.bindingAddress, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -52,6 +84,7 @@ func ElSimulatorHandle(
 // Find file if not found (or a other error) nil else file.
 func findFile(r *http.Request) *os.File {
 	//TODO generate name file
+	log.Println(elSimulatorConfig.baseDirectory, r.URL.Path, r.URL.Query(), r.Form)
 	file, err := os.Open("TODO.go") // For read access.
 	if err != nil {
 		log.Println(err)
