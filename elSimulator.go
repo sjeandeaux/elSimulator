@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
+	"io/ioutil"
 	"log"
 	"mime"
 	"net/http"
@@ -22,7 +24,14 @@ type ElSimulatorConfig struct {
 	baseDirectory string
 }
 
+type Info struct {
+	HttpCode       int
+	UrlRedirection string
+}
+
 const (
+	prefixInfo       = "info_"
+	suffixInfo       = ".json"
 	separator        = "_"
 	separatorURL     = "/"
 	withoutParameter = "withoutParameter"
@@ -72,27 +81,32 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 }
 
 // Request <= /folder0/..../folderN?param1=param1&...paramN=valueN with POST or PUT content
 // Found file [folder configuration]/determine(request)
 // If the file does not exist then it sends a 404 else the file is written to the stream
 //TODO add parameter in template
+//TODO Protocole CORS
 func ElSimulatorHandle(
 	w http.ResponseWriter,
 	r *http.Request) {
-	f := findFile(r)
-	if f == nil {
-		http.Error(w, "The life is a party!!!", http.StatusNotFound)
+	fileInfo, fileToRead := findFile(r)
+	if fileToRead == nil {
+		http.Error(w, "The life is a party!!!", fileInfo.HttpCode)
 	} else {
 		//TODO template
-		name := f.Name()
+		name := fileToRead.Name()
 		t, err := template.ParseFiles(name)
 		if err != nil {
 			log.Printf("error template => %s", err)
 		}
+		//read information status code and other
 		w.Header().Add("content-type", mime.TypeByExtension(filepath.Ext(name)))
+		w.WriteHeader(fileInfo.HttpCode)
 		t.Execute(w, nil)
+
 	}
 
 }
@@ -101,28 +115,58 @@ func ElSimulatorHandle(
 // Url => localhost/file/test/sub?param1=value1&param2=value2
 // File /.../file/test/sub/param1_value1_param2_value2
 // If not found first file matchs pattern /.../file/test/sub/param1_value1_param2_value2*
-func findFile(r *http.Request) *os.File {
-	fileToRead := elSimulatorConfig.baseDirectory + strings.Replace(r.URL.Path, separatorURL, pathSeparator, -1) + pathSeparator + nameFile(r.URL.Query())
+func findFile(r *http.Request) (*Info, *os.File) {
+	base := elSimulatorConfig.baseDirectory + strings.Replace(r.URL.Path, separatorURL, pathSeparator, -1) + pathSeparator
+	calName := nameFile(r.URL.Query())
+	fileToRead := base + calName
+	fileInfo, errInfo := getInfo(base, calName)
+	if errInfo != nil {
+		log.Println(errInfo)
+	}
+
 	log.Printf("file => %s", fileToRead)
 	//file exists
 	file, err := os.Open(fileToRead)
 	if err == nil {
-		return file
+		return fileInfo, file
 	}
 	log.Printf("error => %s", err)
 	allFile, errTwo := filepath.Glob(fileToRead + "*")
 	if errTwo != nil || len(allFile) == 0 {
 		log.Println(errTwo)
-		return nil
+		return fileInfo, nil
 	}
 
 	log.Printf("file => %s", allFile[0])
 	file, err = os.Open(allFile[0]) // For read access.
 	if err != nil {
-		return nil
+		return fileInfo, nil
 	}
-	return file
+	return fileInfo, file
 
+}
+
+//Read file json
+func getInfo(base, calName string) (*Info, error) {
+	fileToReadInfo := base + prefixInfo + calName + suffixInfo
+	log.Println("file info ", fileToReadInfo)
+	file, err := os.Open(fileToReadInfo)
+	if err != nil {
+		return &Info{404, ""}, err
+	}
+	bytesFile, errRead := ioutil.ReadAll(file)
+	if errRead != nil {
+		log.Println("error:", errRead)
+		return &Info{200, ""}, nil
+	}
+
+	var info Info
+	errJson := json.Unmarshal(bytesFile, &info)
+	if errJson != nil {
+		log.Println("error:", errJson)
+		return &Info{200, ""}, nil
+	}
+	return &info, nil
 }
 
 //query to generate name.
