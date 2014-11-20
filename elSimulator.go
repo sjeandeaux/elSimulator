@@ -91,8 +91,6 @@ func main() {
 // Request <= /folder0/..../folderN?param1=param1&...paramN=valueN with POST or PUT content
 // Found file [folder configuration]/determine(request)
 // If the file does not exist then it sends a 404 else the file is written to the stream
-//TODO add parameter in template
-//TODO Protocole CORS
 func ElSimulatorHandle(
 	w http.ResponseWriter,
 	r *http.Request) {
