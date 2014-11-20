@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 )
@@ -21,7 +22,8 @@ type ElSimulatorConfig struct {
 	//url to call
 	bindingAddress string
 	//directory with file to read
-	baseDirectory string
+	baseDirectory  string
+	parameterRegex string
 }
 
 type Info struct {
@@ -33,7 +35,7 @@ const (
 	prefixInfo       = "info_"
 	suffixInfo       = ".json"
 	separator        = "_"
-	separatorURL     = "/"
+	URLSeparator     = "/"
 	withoutParameter = "withoutParameter"
 	pathSeparator    = string(os.PathSeparator)
 )
@@ -47,9 +49,11 @@ func init() {
 		defaultBindingAddress = "localhost:4000"
 		elSimulatorCurrent    = "elSimulatorCurrent"
 		defaultBaseDirectory  = elSimulatorCurrent //elSimulatorCurrent if default is current directory
+		defaultParameterRegex = ".*"
 	)
 	flag.StringVar(&elSimulatorConfig.bindingAddress, "bindingAddress", defaultBindingAddress, "The binding address")
 	flag.StringVar(&elSimulatorConfig.baseDirectory, "baseDirectory", defaultBaseDirectory, "directory with file to read (elSimulatorCurrent to use directory elSimulator)")
+	flag.StringVar(&elSimulatorConfig.parameterRegex, "parameterRegex", defaultParameterRegex, "Parameter regex")
 	flag.Parse()
 	//use home'user
 	switch elSimulatorConfig.baseDirectory {
@@ -92,7 +96,10 @@ func main() {
 func ElSimulatorHandle(
 	w http.ResponseWriter,
 	r *http.Request) {
-	fileInfo, fileToRead := findFile(r)
+	fileInfo, fileToRead, params := findFile(r)
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS, PUT, DELETE, POST, PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
 	if fileToRead == nil {
 		http.Error(w, "The life is a party!!!", fileInfo.HttpCode)
 	} else {
@@ -105,19 +112,20 @@ func ElSimulatorHandle(
 		//read information status code and other
 		w.Header().Add("content-type", mime.TypeByExtension(filepath.Ext(name)))
 		w.WriteHeader(fileInfo.HttpCode)
-		t.Execute(w, nil)
+		t.Execute(w, params)
 
 	}
 
 }
 
 // Find file if not found (or a other error) nil else file.
-// Url => localhost/file/test/sub?param1=value1&param2=value2
-// File /.../file/test/sub/param1_value1_param2_value2
-// If not found first file matchs pattern /.../file/test/sub/param1_value1_param2_value2*
-func findFile(r *http.Request) (*Info, *os.File) {
-	base := elSimulatorConfig.baseDirectory + strings.Replace(r.URL.Path, separatorURL, pathSeparator, -1) + pathSeparator
-	calName := nameFile(r.URL.Query())
+// Url GET => localhost/file/test/sub?param1=value1&param2=value2
+// File /.../file/test/sub/GET/param1_value1_param2_value2
+// If not found first file matchs pattern /.../file/test/sub/GET/param1_value1_param2_value2*
+func findFile(r *http.Request) (*Info, *os.File, map[string][]string) {
+	base := Base(r.Method, r.URL.Path)
+	calName, params := NameFile(r)
+
 	fileToRead := base + calName
 	fileInfo, errInfo := getInfo(base, calName)
 	if errInfo != nil {
@@ -128,22 +136,34 @@ func findFile(r *http.Request) (*Info, *os.File) {
 	//file exists
 	file, err := os.Open(fileToRead)
 	if err == nil {
-		return fileInfo, file
+		return fileInfo, file, params
 	}
 	log.Printf("error => %s", err)
 	allFile, errTwo := filepath.Glob(fileToRead + "*")
 	if errTwo != nil || len(allFile) == 0 {
 		log.Println(errTwo)
-		return fileInfo, nil
+		return fileInfo, nil, params
 	}
 
 	log.Printf("file => %s", allFile[0])
 	file, err = os.Open(allFile[0]) // For read access.
 	if err != nil {
-		return fileInfo, nil
+		return fileInfo, nil, params
 	}
-	return fileInfo, file
+	return fileInfo, file, params
 
+}
+
+func Base(method, path string) string {
+	var folder string
+	if path == "/file/" {
+		folder = pathSeparator + "file"
+
+	} else {
+		folder = strings.Replace(path, URLSeparator, pathSeparator, -1)
+	}
+
+	return elSimulatorConfig.baseDirectory + folder + pathSeparator + method + pathSeparator
 }
 
 //Read file json
@@ -169,22 +189,40 @@ func getInfo(base, calName string) (*Info, error) {
 	return &info, nil
 }
 
-//query to generate name.
-//TODO sort parameter and valueS
-//TODO filter
-//TODO body content.
-func nameFile(query url.Values) string {
-	var buffer bytes.Buffer
-	//append all key value
-	for key, value := range query {
-		buffer.WriteString(separator)
-		buffer.WriteString(key)
-		buffer.WriteString(separator)
-		buffer.WriteString(strings.Join(value, separator))
-	}
-	if buffer.Len() == 0 {
+type NameFileParameter struct {
+	buffer       bytes.Buffer
+	allParameter map[string][]string
+}
+
+func (b *NameFileParameter) GetName() string {
+	if b.buffer.Len() == 0 {
 		return withoutParameter
 	}
 	//remove first separator
-	return buffer.String()[1:]
+	return b.buffer.String()[1:]
+}
+
+// Query parses RawQuery and returns the corresponding values.
+func (b *NameFileParameter) Append(values url.Values) {
+	for key, value := range values {
+		b.allParameter[key] = value
+		if match, _ := regexp.Match(elSimulatorConfig.parameterRegex, []byte(key)); match {
+			log.Println("key ", key)
+			b.buffer.WriteString(separator)
+			b.buffer.WriteString(key)
+			b.buffer.WriteString(separator)
+			b.buffer.WriteString(strings.Join(value, separator))
+		}
+
+	}
+}
+
+//query to generate name.
+func NameFile(r *http.Request) (string, map[string][]string) {
+	var buffer NameFileParameter
+	buffer.allParameter = make(map[string][]string)
+	//append all key value
+	buffer.Append(r.URL.Query())
+	buffer.Append(r.Form)
+	return buffer.GetName(), buffer.allParameter
 }
