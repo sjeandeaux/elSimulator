@@ -35,6 +35,7 @@ const (
 	prefixInfo       = "info_"
 	suffixInfo       = ".json"
 	separator        = "_"
+	context		     = "/file/"
 	URLSeparator     = "/"
 	withoutParameter = "withoutParameter"
 	pathSeparator    = string(os.PathSeparator)
@@ -79,7 +80,7 @@ func init() {
 //Bind address.
 //TODO administration status request in levelDb???
 func main() {
-	http.HandleFunc("/file/", ElSimulatorHandle)
+	http.HandleFunc(context, ElSimulatorHandle)
 	log.Println("start on ", elSimulatorConfig.bindingAddress)
 	err := http.ListenAndServe(elSimulatorConfig.bindingAddress, nil)
 	if err != nil {
@@ -154,8 +155,8 @@ func findFile(r *http.Request) (*Info, *os.File, map[string][]string) {
 
 func Base(method, path string) string {
 	var folder string
-	if path == "/file/" {
-		folder = pathSeparator + "file"
+	if path == context {
+		folder = strings.Replace(path[:len(context)-1], URLSeparator, pathSeparator, -1)
 
 	} else {
 		folder = strings.Replace(path, URLSeparator, pathSeparator, -1)
