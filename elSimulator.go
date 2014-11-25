@@ -140,7 +140,7 @@ func ElProxyHandle(
 	base, calName, params := NameFile(r)
 	indexPath := strings.Index(calName, pathSeparator)
 	log.Println(base, calName, indexPath, params)
-	req, _ := http.NewRequest(r.Method, elSimulatorConfig.proxyAddress+strings.Replace(r.URL.RequestURI(), contextProxy, URLSeparator, 1), nil)
+	req, _ := http.NewRequest(r.Method, elSimulatorConfig.proxyAddress+strings.Replace(r.URL.RequestURI(), contextProxy, "", 1), nil)
 	resp, _ := http.DefaultClient.Do(req)
 
 	if indexPath != -1 {
