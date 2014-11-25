@@ -131,6 +131,7 @@ func ElSimulatorHandle(
 // TODO Body
 // TODO copy header
 // TODO Form
+// TODO extension
 func ElProxyHandle(
 	w http.ResponseWriter,
 	r *http.Request) {
