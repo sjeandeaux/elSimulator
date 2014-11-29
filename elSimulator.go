@@ -1,7 +1,13 @@
 package main
 
-// TODO replace caract name file
-// TODO length name file
+// TODO replace charactere like /...
+// TODO length name file get max and trim ~
+// TODO Proxy parameter
+// TODO Proxy Body
+// TODO Proxy copy header
+// TODO Proxy Form
+// TODO NameFileParameter getInfo and findFile
+// TODO find better name NameFileFileParameter (global split code, refactor name)
 
 import (
 	"bytes"
@@ -42,7 +48,7 @@ const (
 	separator        = "_"
 	context          = "/file/"
 	contextProxy     = "/proxy/"
-	URLSeparator     = "/"
+	urlSeparator     = "/"
 	withoutParameter = "withoutParameter"
 	pathSeparator    = string(os.PathSeparator)
 )
@@ -127,10 +133,6 @@ func ElSimulatorHandle(
 
 }
 
-// TODO Proxy parameter
-// TODO Body
-// TODO copy header
-// TODO Form
 func ElProxyHandle(
 	w http.ResponseWriter,
 	r *http.Request) {
@@ -140,7 +142,7 @@ func ElProxyHandle(
 	base, calName, params := NameFile(r)
 	indexPath := strings.Index(calName, pathSeparator)
 	log.Println(base, calName, indexPath, params)
-	req, _ := http.NewRequest(r.Method, elSimulatorConfig.proxyAddress+strings.Replace(r.URL.RequestURI(), contextProxy, URLSeparator, 1), nil)
+	req, _ := http.NewRequest(r.Method, elSimulatorConfig.proxyAddress+strings.Replace(r.URL.RequestURI(), contextProxy, urlSeparator, 1), nil)
 	resp, _ := http.DefaultClient.Do(req)
 
 	if indexPath != -1 {
@@ -268,10 +270,10 @@ func (b *NameFileParameter) Append(values url.Values) {
 func (b *NameFileParameter) Base(method, path string) string {
 	var folder string
 	if path == context {
-		folder = strings.Replace(path[:len(context)-1], URLSeparator, pathSeparator, -1)
+		folder = strings.Replace(path[:len(context)-1], urlSeparator, pathSeparator, -1)
 
 	} else {
-		folder = strings.Replace(path, URLSeparator, pathSeparator, -1)
+		folder = strings.Replace(path, urlSeparator, pathSeparator, -1)
 	}
 
 	return elSimulatorConfig.baseDirectory + folder + pathSeparator + method + pathSeparator
