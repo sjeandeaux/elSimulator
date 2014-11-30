@@ -1,14 +1,5 @@
 package main
 
-// TODO replace charactere like /...
-// TODO length name file get max and trim ~
-// TODO Proxy parameter
-// TODO Proxy Body
-// TODO Proxy copy header
-// TODO Proxy Form
-// TODO NameFileParameter getInfo and findFile
-// TODO find better name NameFileFileParameter (global split code, refactor name)
-
 import (
 	"bytes"
 	"encoding/json"
