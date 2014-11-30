@@ -21,7 +21,7 @@ Usage of ./elSimulator:
 One URL is one file in directory **elSimulatorCurrent**.
 We can overwritte http code with file [folder]info_[name file].json.
 
-####[folder]info_[name file].json
+####Optional file [folder]info_[name file].json
 ```json
 {
 	"HttpCode" : 203
