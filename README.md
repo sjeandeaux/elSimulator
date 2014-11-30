@@ -1,6 +1,6 @@
-ElSimulator*
+ElSimulator[^1]
 ========
-*inspired by work at M6 and BT
+
 
 **Feature Reader** Emulate server API (or other) with files.<br/>
 **Feature Proxy** Helper to create file to read with proxy on the real API (or other).
@@ -29,7 +29,7 @@ We can overwritte http code with file [folder]info_[name file].json.
 ```
 
 |URL|file|file info|http code|
-|---|---|---|---|
+|----|----|----|----|
 |http://localhost:4000/file/test|current base/file/test/GET/withoutParameter.xml|current base/file/test/GET/info_withoutParameter.json|500|
 |http://localhost:4000/file/test?param=value|current base/file/test/GET/param_value.json|current base/file/test/GET/info_param_value.json|203|
 
@@ -37,5 +37,7 @@ We can overwritte http code with file [folder]info_[name file].json.
 ###Feature Proxy (proxyAddress=http://www.google.fr)
 
 |URL|called url|file|
-|---|---|---|
+|----|----|----|
 |http://localhost:4000/proxy/?q=test|http://www.google.fr/?q=test|current base/proxy/GET/q_test|
+
+[^1]inspired by work at M6 and BT
