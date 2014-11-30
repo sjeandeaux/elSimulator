@@ -31,6 +31,7 @@ type ElSimulatorConfig struct {
 type Info struct {
 	HttpCode       int
 	UrlRedirection string
+	Header         map[string]string
 }
 
 const (
@@ -57,7 +58,7 @@ func init() {
 		defaultParameterRegex = ".*"
 	)
 	flag.StringVar(&elSimulatorConfig.bindingAddress, "bindingAddress", defaultBindingAddress, "The binding address")
-	flag.StringVar(&elSimulatorConfig.proxyAddress, "proxyAddress", defaultProxyAddress, "The binding address")
+	flag.StringVar(&elSimulatorConfig.proxyAddress, "proxyAddress", defaultProxyAddress, "The proxy address")
 	flag.StringVar(&elSimulatorConfig.baseDirectory, "baseDirectory", defaultBaseDirectory, "directory with file to read (elSimulatorCurrent to use directory elSimulator)")
 	flag.StringVar(&elSimulatorConfig.parameterRegex, "parameterRegex", defaultParameterRegex, "Parameter regex")
 	flag.Parse()
@@ -82,10 +83,7 @@ func init() {
 	log.Println("configuration :", elSimulatorConfig)
 }
 
-//Bind address.
-//TODO administration status request in levelDb???
 func main() {
-
 	http.HandleFunc(contextProxy, ElProxyHandle)
 	http.HandleFunc(context, ElSimulatorHandle)
 	log.Println("start on ", elSimulatorConfig.bindingAddress)
@@ -103,9 +101,9 @@ func ElSimulatorHandle(
 	w http.ResponseWriter,
 	r *http.Request) {
 	fileInfo, fileToRead, params := findFile(r)
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS, PUT, DELETE, POST, PUT")
-	w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
+	//TODO header in configuration
+	addCORSHeader(w)
+	log.Println(fileInfo)
 	if fileToRead == nil {
 		http.Error(w, "The life is a party!!!", fileInfo.HttpCode)
 	} else {
@@ -117,6 +115,11 @@ func ElSimulatorHandle(
 		}
 		//read information status code and other
 		w.Header().Add("content-type", mime.TypeByExtension(filepath.Ext(name)))
+
+		for key, value := range fileInfo.Header {
+			w.Header().Add(key, value)
+		}
+
 		w.WriteHeader(fileInfo.HttpCode)
 		t.Execute(w, params)
 
@@ -124,17 +127,17 @@ func ElSimulatorHandle(
 
 }
 
+//TODO error NewRequest and Do...
 func ElProxyHandle(
 	w http.ResponseWriter,
 	r *http.Request) {
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS, PUT, DELETE, POST, PUT")
-	w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
+	addCORSHeader(w)
 	base, calName, params := NameFile(r)
 	indexPath := strings.Index(calName, pathSeparator)
 	log.Println(base, calName, indexPath, params)
 	calledUrl := elSimulatorConfig.proxyAddress + strings.Replace(r.URL.RequestURI(), contextProxy, urlSeparator, 1)
 	log.Println("called url ", calledUrl)
+
 	req, _ := http.NewRequest(r.Method, calledUrl, nil)
 	resp, _ := http.DefaultClient.Do(req)
 
@@ -143,7 +146,7 @@ func ElProxyHandle(
 	} else {
 		os.MkdirAll(base, 0755)
 	}
-
+	saveInfo(resp, base, calName)
 	file, errFile := os.Create(base + calName)
 	if errFile != nil {
 		log.Println(base, calName, errFile)
@@ -170,6 +173,29 @@ func ElProxyHandle(
 			panic(err)
 		}
 	}
+
+}
+
+//TODO configuration header
+func addCORSHeader(w http.ResponseWriter) {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS, PUT, DELETE, POST, PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
+}
+
+//save status and header in file info
+//TODO error
+//TODO save in file
+func saveInfo(resp *http.Response, base, calName string) {
+	var info Info
+	info.HttpCode = resp.StatusCode
+	info.Header = make(map[string]string)
+	for val := range resp.Header {
+		log.Println(val)
+		info.Header[val] = resp.Header.Get(val)
+	}
+	infoJson, _ := json.MarshalIndent(info, "", "   ")
+	log.Println(string(infoJson))
 
 }
 
@@ -215,19 +241,19 @@ func getInfo(base, calName string) (*Info, error) {
 	log.Println("file info ", fileToReadInfo)
 	file, err := os.Open(fileToReadInfo)
 	if err != nil {
-		return &Info{404, ""}, err
+		return &Info{404, "", nil}, err
 	}
 	bytesFile, errRead := ioutil.ReadAll(file)
 	if errRead != nil {
 		log.Println("error:", errRead)
-		return &Info{200, ""}, nil
+		return &Info{200, "", nil}, nil
 	}
 
 	var info Info
 	errJson := json.Unmarshal(bytesFile, &info)
 	if errJson != nil {
 		log.Println("error:", errJson)
-		return &Info{200, ""}, nil
+		return &Info{200, "", nil}, nil
 	}
 	return &info, nil
 }

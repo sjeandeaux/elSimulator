@@ -1,4 +1,8 @@
 {
-	"HttpCode" : 203
-
+   "HttpCode": 200,
+   "UrlRedirection": "",
+   "Header": {
+      "Header One": "Value One",
+	  "Header Two": "Value Two"
+   }
 }
