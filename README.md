@@ -23,7 +23,7 @@ We can overwritte http code with file [folder]info_[name file].json.
 ####Optional file [folder]info_[name file].json
 ```json
 {
-   "HttpCode": 205,
+   "HttpCode": 200,
    "UrlRedirection": "",
    "Header": {
       "Header One": "Value One",
