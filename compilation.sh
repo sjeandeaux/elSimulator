@@ -25,6 +25,7 @@ windows_amd64"
 
 #firt parameter GOROOT
 #second parameter OS_ARCH
+#TODO error
 function compile(){
 	GOOS=${2%_*}
 	GOARCH=${2#*_}
@@ -49,6 +50,10 @@ function compile(){
 	else 
 		echo $2 exists
 	fi
+	if [ ! -d bin/$2/ ]; then
+		mkdir -p bin/$2/
+	fi
+	make build-output output=bin/$2/${CURRENT_DIR##*/}
 
 
 }
