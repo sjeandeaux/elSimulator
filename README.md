@@ -10,15 +10,15 @@ Usage of ./elSimulator:
   -baseDirectory="elSimulatorCurrent": directory with file to read (elSimulatorCurrent to use directory elSimulator)
   -bindingAddress="localhost:4000": The binding address
   -parameterRegex=".*": Parameter regex
-  -proxyAddress="http://localhost:4000/file": The binding address
+  -proxyAddress="http://localhost:4000/file": The proxy address
 ```
 
 ##Start server ./elSimulator
 
 ####Feature Reader
 
-One URL is one file in directory **elSimulatorCurrent**.
-We can overwritte http code with file [folder]info_[name file].json.
+One URL is one file [folder]/[name file].[detect ext] in directory **elSimulatorCurrent**.
+We can overwritte http code and http headers with file [folder]**info_**[name file]**.json**. 
 
 ####Optional file [folder]info_[name file].json
 ```json
