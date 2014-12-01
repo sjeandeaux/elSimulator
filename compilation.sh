@@ -1,8 +1,8 @@
 #!/bin/bash
 #https://golang.org/doc/install/source
 ALL_GOOS_GOARCH="\
-darwin_386 \
 darwin_amd64 \
+darwin_386 \
 dragonfly_386 \
 dragonfly_amd64 \
 freebsd_386 \
@@ -22,42 +22,50 @@ solaris_amd64 \
 windows_386 \
 windows_amd64"
 
+#execute GOROOT/src/make.bash
+function prepare(){
+	WHERE_GO=$(go env GOROOT)
+	GOOS=${1%_*}
+	GOARCH=${1#*_}
+	if [ ! -d $WHERE_GO/pkg/$1 ]; then
+		#make.bash
+		echo make
+		cd $WHERE_GO/src
+		GOOS=${GOOS} GOARCH=${GOARCH} ./make.bash -v --no-clean 
+		if [ $? -eq 0 ]; then
+			echo Yes we can $1
+    		cd $CURRENT_DIR
+		else
+			echo No try again $1
+    		cd $CURRENT_DIR 	
+    		return 1
+		fi
+	else 
+		echo $1 exists
+	fi
+	return 0
+}
 
 #firt parameter GOROOT
 #second parameter OS_ARCH
-#TODO error
 function compile(){
-	GOOS=${2%_*}
-	GOARCH=${2#*_}
 	#build env
 	CURRENT_DIR=${PWD}
-	
-	if [ ! -d $1/pkg/$2 ]; then
-		#make.bash
-		echo make
-		cd $1/src
-		GOOS=${GOOS} GOARCH=${GOARCH} ./make.bash -v --no-clean > /dev/null 2>&1
-		if [ $? -eq 0 ]; then
-			echo Yes we can $2
-    		cd $CURRENT_DIR
-		else
-			echo No try again $2
-    		cd $CURRENT_DIR
-    		return 0	
-			
-		fi
-		
-	else 
-		echo $2 exists
+	prepare $1
+	if [ $? -ne 0 ]; then
+		return 1
 	fi
 	if [ ! -d bin/$2/ ]; then
 		mkdir -p bin/$2/
 	fi
-	make build-output output=bin/$2/${CURRENT_DIR##*/}
-
-
+	make build-output output=bin/$1/${CURRENT_DIR##*/}
+	return 0
 }
 
 for GOOS_GOARCH in $ALL_GOOS_GOARCH; do
-	compile $(go env GOROOT) $GOOS_GOARCH
+	compile $GOOS_GOARCH
+	if [ $? -ne 0 ]; then
+		echo Sh***t
+		return 1
+	fi
 done
