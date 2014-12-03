@@ -1,4 +1,9 @@
 #!/bin/bash
+####################################################################################################
+#
+#TODO refactoring code
+#
+####################################################################################################
 #https://golang.org/doc/install/source
 ALL_GOOS_GOARCH="\
 darwin_amd64 \
@@ -27,6 +32,7 @@ function prepare(){
 	WHERE_GO=$(go env GOROOT)
 	GOOS=${1%_*}
 	GOARCH=${1#*_}
+	#we have not package, we create
 	if [ ! -d $WHERE_GO/pkg/$1 ]; then
 		#make.bash
 		echo make
@@ -34,11 +40,11 @@ function prepare(){
 		GOOS=${GOOS} GOARCH=${GOARCH} ./make.bash -v --no-clean 
 		if [ $? -eq 0 ]; then
 			echo Yes we can $1
-    		cd $CURRENT_DIR
+    			cd $CURRENT_DIR
 		else
 			echo No try again $1
-    		cd $CURRENT_DIR 	
-    		return 1
+    			cd $CURRENT_DIR 	
+    			return 1
 		fi
 	else 
 		echo $1 exists
