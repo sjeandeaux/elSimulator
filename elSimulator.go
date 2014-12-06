@@ -152,6 +152,12 @@ func ElProxyHandle(
 	if errFile != nil {
 		log.Println(base, calName, errFile)
 	}
+
+	for val := range resp.Header {
+		log.Println("...", val, resp.Header.Get(val))
+		w.Header().Set(val, resp.Header.Get(val))
+	}
+	w.WriteHeader(resp.StatusCode)
 	// make a buffer to keep chunks that are read
 	whatIRead := make([]byte, 1024)
 	for {
@@ -174,7 +180,6 @@ func ElProxyHandle(
 			panic(err)
 		}
 	}
-
 }
 
 //TODO configuration header
@@ -186,7 +191,6 @@ func addCORSHeader(w http.ResponseWriter) {
 
 //save status and header in file info
 //TODO error
-//TODO save in file
 func saveInfo(resp *http.Response, base, calName string) {
 	var info Info
 	info.HttpCode = resp.StatusCode
