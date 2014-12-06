@@ -29,7 +29,7 @@ type ElSimulatorConfig struct {
 }
 
 type Info struct {
-	HttpCode       int
+	HttpCode       int `mmm`
 	UrlRedirection string
 	Header         map[string]string
 }
@@ -146,8 +146,9 @@ func ElProxyHandle(
 	} else {
 		os.MkdirAll(base, 0755)
 	}
-	saveInfo(resp, base, calName)
+	go saveInfo(resp, base, calName)
 	file, errFile := os.Create(base + calName)
+	defer file.Close()
 	if errFile != nil {
 		log.Println(base, calName, errFile)
 	}
@@ -195,7 +196,16 @@ func saveInfo(resp *http.Response, base, calName string) {
 		info.Header[val] = resp.Header.Get(val)
 	}
 	infoJson, _ := json.MarshalIndent(info, "", "   ")
-	log.Println(string(infoJson))
+
+	file, errFile := os.Create(getFileNameInfo(base, calName))
+	defer file.Close()
+	if errFile != nil {
+		log.Println(base, calName, errFile)
+	}
+	file.Write(infoJson)
+	if errFile != nil {
+		log.Println(base, calName, errFile)
+	}
 
 }
 
@@ -235,9 +245,13 @@ func findFile(r *http.Request) (*Info, *os.File, map[string][]string) {
 
 }
 
+func getFileNameInfo(base, calName string) string {
+	return base + prefixInfo + calName + suffixInfo
+}
+
 //Read file json
 func getInfo(base, calName string) (*Info, error) {
-	fileToReadInfo := base + prefixInfo + calName + suffixInfo
+	fileToReadInfo := getFileNameInfo(base, calName)
 	log.Println("file info ", fileToReadInfo)
 	file, err := os.Open(fileToReadInfo)
 	if err != nil {
@@ -248,7 +262,6 @@ func getInfo(base, calName string) (*Info, error) {
 		log.Println("error:", errRead)
 		return &Info{200, "", nil}, nil
 	}
-
 	var info Info
 	errJson := json.Unmarshal(bytesFile, &info)
 	if errJson != nil {
