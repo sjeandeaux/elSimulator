@@ -1,6 +1,10 @@
 ElSimulator*
 ========
 
+##Stack
+
+* [Go](https://golang.org/)
+
 **Feature Reader** Emulate server API (or other) with files.<br/>
 **Feature Proxy** Helper to create file to read with proxy on the real API (or other).
 
@@ -44,4 +48,4 @@ We can overwritte http code and http headers with file [folder]**info_**[name fi
 |----|----|----|
 |http://localhost:4000/proxy/?q=test|http://www.google.fr/?q=test|current base/proxy/GET/q_test|
 
-*inspired by work at M6 and BT
+**Inspired by work at M6 and BT*
