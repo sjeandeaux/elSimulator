@@ -1,2 +1,2 @@
 build-output:
-	go build
+	go build -o ${output}
