@@ -1,5 +1,7 @@
-ElSimulator*
+ElSimulator
 ========
+
+[![Build Status](https://travis-ci.org/sjeandeaux/elSimulator.svg?branch=master)](https://travis-ci.org/sjeandeaux/elSimulator)
 
 ##Stack
 
@@ -49,5 +51,3 @@ We can overwritte http code and http headers with file [folder]**info_**[name fi
 |URL|called url|file|
 |----|----|----|
 |http://localhost:4000/proxy/?q=test|http://www.google.fr/?q=test|current base/proxy/GET/q_test|
-
-**Inspired by work at M6 and BT*
