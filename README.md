@@ -1,7 +1,7 @@
 ElSimulator
 ========
 
-[![Build Status](https://drone.io/github.com/sjeandeaux/elSimulator/status.png)](https://drone.io/github.com/sjeandeaux/elSimulator/latest)
+[![Build Status](https://drone.io/github.com/sjeandeaux/elSimulator/status.png)](https://drone.io/github.com/sjeandeaux/elSimulator/latest) [![Coverage Status](https://coveralls.io/repos/sjeandeaux/elSimulator/badge.svg?branch=master)](https://coveralls.io/r/sjeandeaux/elSimulator?branch=master)
 
 ##Stack
 
