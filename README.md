@@ -1,7 +1,7 @@
 ElSimulator
 ========
 
-[![Build Status](https://travis-ci.org/sjeandeaux/elSimulator.svg?branch=master)](https://travis-ci.org/sjeandeaux/elSimulator)
+[![Build Status](https://drone.io/github.com/sjeandeaux/elSimulator/status.png)](https://drone.io/github.com/sjeandeaux/elSimulator/latest)
 
 ##Stack
 
