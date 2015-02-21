@@ -5,4 +5,4 @@ language: go
 go:
  - tip
  
-install: make build-output output=elSimulator
+install: go test
