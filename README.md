@@ -7,7 +7,7 @@ ElSimulator
 
 [![Coverage Status](https://coveralls.io/repos/sjeandeaux/elSimulator/badge.svg?branch=master)](https://coveralls.io/r/sjeandeaux/elSimulator?branch=master)
 
-##Stack
+## Stack
 
 * [Go](https://golang.org/)
 
@@ -25,14 +25,14 @@ Usage of ./elSimulator:
   -proxyAddress="http://localhost:4000/file": The proxy address
 ```
 
-##Start server ./elSimulator
+## Start server ./elSimulator
 
-####Feature Reader
+#### Feature Reader
 
 One URL is one file [folder]/[name file].[detect ext] in directory **elSimulatorCurrent**.
 We can overwritte http code and http headers with file [folder]**info_**[name file]**.json**. 
 
-####Optional file [folder]info_[name file].json
+#### Optional file [folder]info_[name file].json
 ```json
 {
    "HttpCode": 200,
@@ -50,7 +50,7 @@ We can overwritte http code and http headers with file [folder]**info_**[name fi
 |http://localhost:4000/file/test?param=value|current base/file/test/GET/param_value.json|current base/file/test/GET/info_param_value.json|203|
 
 
-###Feature Proxy (proxyAddress=http://www.google.fr)
+### Feature Proxy (proxyAddress=http://www.google.fr)
 
 |URL|called url|file|
 |----|----|----|
